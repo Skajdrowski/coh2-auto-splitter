@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - 'master'
+      - 'main'
     tags:
       - '*'
 
@@ -29,10 +29,10 @@ jobs:
           cargo b --release --locked
 
       - name: Release
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          files: target/wasm32-unknown-unknown/release/co_h2_auto_splitter.wasm
+          files: target/wasm32-unknown-unknown/release/coh2_auto_splitter.wasm
           name: Latest
           tag_name: latest
           body: This contains the latest version of the auto splitter.
