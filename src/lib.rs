@@ -54,7 +54,7 @@ impl Memory {
         //let baseModuleSize = retry(|| pe::read_size_of_image(process, baseModule)).await;
         //asr::print_limited::<128>(&format_args!("{}", baseModuleSize));
 
-        Self {
+        Self { // v1.0
             GameClient: GameClient,
             cuts: GameClient + 0x21F050,
             load: baseModule + 0x1B9BF8,
