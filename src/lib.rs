@@ -56,8 +56,8 @@ impl Memory {
         //asr::print_limited::<128>(&format_args!("{}", baseModuleSize));
 
         Self { // v1.0
-            baseModule: baseModule,
-            GameClient: GameClient,
+            baseModule,
+            GameClient,
             cuts: GameClient + 0x21F050,
             load: baseModule + 0x1B9BF8,
             load2: [0x1CBD98, 0x4, 0x50, 0x50, 0x6C, 0x4],
