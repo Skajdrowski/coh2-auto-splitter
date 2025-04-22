@@ -38,11 +38,10 @@ struct Watchers {
 }
 
 struct Memory {
-    baseModule: Address,
     GameClient: Address,
     start: Address,
     load: Address,
-    checkpoint: [u64; 6],
+    checkpoint: [u64; 8],
     level: Address,
     outro: [u64; 4]
 }
@@ -56,11 +55,10 @@ impl Memory {
         //asr::print_limited::<128>(&format_args!("{}", baseModuleSize));
 
         Self { // v1.0
-            baseModule,
             GameClient,
             start: GameClient + 0x21F050,
             load: GameClient + 0x219658,
-            checkpoint: [0x1CBD98, 0x4, 0x50, 0x50, 0x6C, 0x4],
+            checkpoint: [0x21868C, 0xEE0, 0x4C, 0xA8, 0x7C, 0x68, 0x4C, 0x4],
             level: baseModule + 0x1C5159,
             outro: [0x220B10, 0x4, 0x4, 0x7]
         }
@@ -90,7 +88,7 @@ fn split(watchers: &Watchers) -> bool {
 fn mainLoop(process: &Process, memory: &Memory, watchers: &mut Watchers) {
     watchers.startByte.update_infallible(process.read(memory.start).unwrap_or_default());
 
-    watchers.checkpointByte.update_infallible(process.read_pointer_path(memory.baseModule, PointerSize::Bit32, &memory.checkpoint).unwrap_or(1));
+    watchers.checkpointByte.update_infallible(process.read_pointer_path(memory.GameClient, PointerSize::Bit32, &memory.checkpoint).unwrap_or(1));
     watchers.loadByte.update_infallible(process.read(memory.load).unwrap_or(0));
 
     watchers.level.update_infallible(process.read(memory.level).unwrap_or_default());
