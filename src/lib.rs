@@ -30,16 +30,14 @@ struct Settings {
 
 #[derive(Default)]
 struct Watchers {
-    startByte: Watcher<u8>,
     loadByte: Watcher<u8>,
     isPausedByte: Watcher<u8>,
     level: Watcher<ArrayCString<2>>,
-    outro: Watcher<ArrayCString<7>>
+    outro: Watcher<ArrayCString<5>>
 }
 
 struct Memory {
     GameClient: Address,
-    start: Address,
     load: Address,
     isPaused: [u64; 2],
     level: Address,
@@ -56,7 +54,6 @@ impl Memory {
 
         Self { // v1.0
             GameClient,
-            start: GameClient + 0x21F050,
             load: GameClient + 0x219658,
             isPaused: [0x218F94, 0x58],
             level: baseModule + 0x1C5159,
@@ -66,8 +63,7 @@ impl Memory {
 }
 
 fn start(watchers: &Watchers) -> bool {
-    watchers.startByte.pair.is_some_and(|val| val.changed_from_to(&0, &1))
-    && watchers.level.pair.is_some_and(|val| !val.current.is_empty())
+    watchers.loadByte.pair.is_some_and(|val| val.changed_from_to(&3, &6))
 }
 
 fn isLoading(watchers: &Watchers) -> Option<bool> {
@@ -79,15 +75,10 @@ fn split(watchers: &Watchers) -> bool {
             val.changed()
             && !val.current.is_empty()
         )
-        || watchers.outro.pair.is_some_and(|val| 
-        val.old.matches("Outro_2")
-        && val.changed()
-        )
+        || watchers.outro.pair.is_some_and(|val| val.current.matches("Outro"))
 }
 
 fn mainLoop(process: &Process, memory: &Memory, watchers: &mut Watchers) {
-    watchers.startByte.update_infallible(process.read(memory.start).unwrap_or_default());
-
     watchers.isPausedByte.update_infallible(process.read_pointer_path(memory.GameClient, PointerSize::Bit32, &memory.isPaused).unwrap_or(0));
     watchers.loadByte.update_infallible(process.read(memory.load).unwrap_or(0));
 
