@@ -32,7 +32,7 @@ struct Settings {
 struct Watchers {
     loadByte: Watcher<u8>,
     isPausedByte: Watcher<u8>,
-    level: Watcher<ArrayCString<2>>,
+    level: Watcher<u8>,
     outro: Watcher<ArrayCString<5>>
 }
 
@@ -71,18 +71,15 @@ fn isLoading(watchers: &Watchers) -> Option<bool> {
 }
 
 fn split(watchers: &Watchers) -> bool {
-        watchers.level.pair.is_some_and(|val|
-            val.changed()
-            && !val.current.is_empty()
-        )
-        || watchers.outro.pair.is_some_and(|val| val.current.matches("Outro"))
+    watchers.level.pair.is_some_and(|val| val.changed_to(&0))
+    || watchers.outro.pair.is_some_and(|val| val.current.matches("Outro"))
 }
 
 fn mainLoop(process: &Process, memory: &Memory, watchers: &mut Watchers) {
     watchers.isPausedByte.update_infallible(process.read_pointer_path(memory.GameClient, PointerSize::Bit32, &memory.isPaused).unwrap_or(0));
     watchers.loadByte.update_infallible(process.read(memory.load).unwrap_or(0));
 
-    watchers.level.update_infallible(process.read(memory.level).unwrap_or_default());
+    watchers.level.update_infallible(process.read(memory.level).unwrap_or(1));
 
     watchers.outro.update_infallible(process.read_pointer_path(memory.GameClient, PointerSize::Bit32, &memory.outro).unwrap_or_default());
 }
