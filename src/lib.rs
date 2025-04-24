@@ -32,7 +32,7 @@ struct Settings {
 struct Watchers {
     startByte: Watcher<u8>,
     loadByte: Watcher<u8>,
-    checkpointByte: Watcher<u8>,
+    isPausedByte: Watcher<u8>,
     level: Watcher<ArrayCString<2>>,
     outro: Watcher<ArrayCString<7>>
 }
@@ -41,7 +41,7 @@ struct Memory {
     GameClient: Address,
     start: Address,
     load: Address,
-    checkpoint: [u64; 8],
+    isPaused: [u64; 2],
     level: Address,
     outro: [u64; 4]
 }
@@ -58,7 +58,7 @@ impl Memory {
             GameClient,
             start: GameClient + 0x21F050,
             load: GameClient + 0x219658,
-            checkpoint: [0x21868C, 0xEE0, 0x4C, 0xA8, 0x7C, 0x68, 0x4C, 0x4],
+            isPaused: [0x218F94, 0x58],
             level: baseModule + 0x1C5159,
             outro: [0x220B10, 0x4, 0x4, 0x7]
         }
@@ -71,7 +71,7 @@ fn start(watchers: &Watchers) -> bool {
 }
 
 fn isLoading(watchers: &Watchers) -> Option<bool> {
-    Some(watchers.checkpointByte.pair?.current == 0 && watchers.loadByte.pair?.current == 1 || watchers.loadByte.pair?.current == 3)
+    Some(watchers.isPausedByte.pair?.current == 1 && watchers.loadByte.pair?.current == 1 || watchers.loadByte.pair?.current == 3)
 }
 
 fn split(watchers: &Watchers) -> bool {
@@ -88,7 +88,7 @@ fn split(watchers: &Watchers) -> bool {
 fn mainLoop(process: &Process, memory: &Memory, watchers: &mut Watchers) {
     watchers.startByte.update_infallible(process.read(memory.start).unwrap_or_default());
 
-    watchers.checkpointByte.update_infallible(process.read_pointer_path(memory.GameClient, PointerSize::Bit32, &memory.checkpoint).unwrap_or(1));
+    watchers.isPausedByte.update_infallible(process.read_pointer_path(memory.GameClient, PointerSize::Bit32, &memory.isPaused).unwrap_or(0));
     watchers.loadByte.update_infallible(process.read(memory.load).unwrap_or(0));
 
     watchers.level.update_infallible(process.read(memory.level).unwrap_or_default());
