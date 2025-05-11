@@ -11,7 +11,7 @@
 )]
 
 use asr::{
-    Address, Process, PointerSize,
+    Address, Process, PointerSize, deep_pointer::DeepPointer,
     future::{next_tick, retry},
     settings::Gui,
     string::ArrayCString,
@@ -38,12 +38,11 @@ struct Watchers {
 }
 
 struct Memory {
-    GameClient: Address,
     load: Address,
-    isPaused: [u64; 2],
+    isPaused: DeepPointer<2>,
     prompt: Address,
     level: Address,
-    outro: [u64; 4]
+    outro: DeepPointer<4>
 }
 
 impl Memory {
@@ -55,12 +54,11 @@ impl Memory {
         //asr::print_limited::<128>(&format_args!("{}", baseModuleSize));
 
         Self { // v1.0
-            GameClient,
             load: GameClient + 0x219658,
-            isPaused: [0x218F94, 0x58],
+            isPaused: DeepPointer::new(GameClient, PointerSize::Bit32, &[0x218F94, 0x58]),
             prompt: GameClient + 0x21CD6C,
             level: baseModule + 0x1C5159,
-            outro: [0x220B10, 0x4, 0x4, 0x7]
+            outro: DeepPointer::new(GameClient, PointerSize::Bit32, &[0x220B10, 0x4, 0x4, 0x7])
         }
     }
 }
@@ -79,13 +77,13 @@ fn split(watchers: &Watchers) -> bool {
 }
 
 fn mainLoop(process: &Process, memory: &Memory, watchers: &mut Watchers) {
-    watchers.isPausedByte.update_infallible(process.read_pointer_path(memory.GameClient, PointerSize::Bit32, &memory.isPaused).unwrap_or(0));
+    watchers.isPausedByte.update_infallible(memory.isPaused.deref(process).unwrap_or(0));
     watchers.loadByte.update_infallible(process.read(memory.load).unwrap_or(0));
     watchers.promptByte.update_infallible(process.read(memory.prompt).unwrap_or(0));
 
     watchers.level.update_infallible(process.read(memory.level).unwrap_or(1));
 
-    watchers.outro.update_infallible(process.read_pointer_path(memory.GameClient, PointerSize::Bit32, &memory.outro).unwrap_or_default());
+    watchers.outro.update_infallible(memory.outro.deref(process).unwrap_or_default());
 }
 
 async fn main() {
