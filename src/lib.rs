@@ -32,6 +32,7 @@ struct Settings {
 struct Watchers {
     loadByte: Watcher<u8>,
     isPausedByte: Watcher<u8>,
+    chatVisibleByte: Watcher<u8>,
     promptByte: Watcher<u8>,
     level: Watcher<u8>,
     outro: Watcher<ArrayCString<5>>
@@ -40,6 +41,7 @@ struct Watchers {
 struct Memory {
     load: Address,
     isPaused: DeepPointer<2>,
+    chatVisible: DeepPointer<2>,
     prompt: Address,
     level: Address,
     outro: DeepPointer<4>
@@ -56,6 +58,7 @@ impl Memory {
         Self { // v1.0
             load: GameClient + 0x219658,
             isPaused: DeepPointer::new(GameClient, PointerSize::Bit32, &[0x218F94, 0x58]),
+            chatVisible: DeepPointer::new(GameClient, PointerSize::Bit32, &[0x2201B0, 0x454]),
             prompt: GameClient + 0x21CD6C,
             level: baseModule + 0x1C5159,
             outro: DeepPointer::new(GameClient, PointerSize::Bit32, &[0x220B10, 0x4, 0x4, 0x7])
@@ -68,16 +71,17 @@ fn start(watchers: &Watchers) -> bool {
 }
 
 fn isLoading(watchers: &Watchers) -> Option<bool> {
-    Some(watchers.isPausedByte.pair?.current == 1 && watchers.loadByte.pair?.current == 1 && watchers.promptByte.pair?.current == 0 || watchers.loadByte.pair?.current == 3)
+    Some(watchers.isPausedByte.pair?.current == 1 && watchers.loadByte.pair?.current == 1 && watchers.promptByte.pair?.current == 0 && watchers.chatVisibleByte.pair?.current == 0 || watchers.loadByte.pair?.current == 3)
 }
 
 fn split(watchers: &Watchers) -> bool {
-    watchers.level.pair.is_some_and(|val| val.changed_to(&0))
+    watchers.level.pair.is_some_and(|val| val.changed() && val.current != 0)
     || watchers.outro.pair.is_some_and(|val| val.current.matches("Outro"))
 }
 
 fn mainLoop(process: &Process, memory: &Memory, watchers: &mut Watchers) {
     watchers.isPausedByte.update_infallible(memory.isPaused.deref(process).unwrap_or(0));
+    watchers.chatVisibleByte.update_infallible(memory.chatVisible.deref(process).unwrap_or(0));
     watchers.loadByte.update_infallible(process.read(memory.load).unwrap_or(0));
     watchers.promptByte.update_infallible(process.read(memory.prompt).unwrap_or(0));
 
