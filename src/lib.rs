@@ -67,7 +67,7 @@ impl Memory {
 }
 
 fn start(watchers: &Watchers) -> bool {
-    watchers.loadByte.pair.is_some_and(|val| val.changed_from_to(&3, &6))
+    watchers.loadByte.pair.is_some_and(|val| val.changed_to(&1))
 }
 
 fn isLoading(watchers: &Watchers) -> Option<bool> {
